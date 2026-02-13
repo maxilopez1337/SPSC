@@ -190,7 +190,7 @@ export const storage = {
   async loadDefaultTemplateFromAssets() {
     // Lista plików do sprawdzenia w kolejności priorytetu
     // Teraz system najpierw szuka "CERTYFIKAT.png" jako domyślny szablon
-    const candidates = ['/CERTYFIKAT.png', '/CERTYFIKAT (1).png', '/certyfikat.png'];
+    const candidates = ['/CERTYFIKAT.png', '/CERTYFIKAT (1).png', '/certyfikat.png', '/public/CERTYFIKAT.png', '/public/CERTYFIKAT (1).png', '/public/certyfikat.png'];
 
     for (const path of candidates) {
         try {
