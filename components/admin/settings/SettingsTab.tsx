@@ -158,7 +158,14 @@ export const SettingsTab: React.FC = () => {
                                 variant="outline"
                                 size="sm"
                             >
-                                Podgląd PDF
+                                Podgląd PDF/Obraz
+                            </Button>
+                            <Button 
+                                onClick={() => downloadPdf(previewName)}
+                                variant="primary"
+                                size="sm"
+                            >
+                                Pobierz PDF
                             </Button>
                             <Button 
                                 onClick={handleManualSave}

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { CertificateLayout } from '../types';
 import { storage } from '../services/storage';
 import { pdfService } from '../services/pdfService';
+import html2canvas from 'html2canvas';
 import * as pdfjsLib from 'pdfjs-dist';
 
 // FIX: Bezpieczna obsługa importu ES Module dla pdfjs-dist
@@ -15,6 +16,15 @@ const PDFJS = getPdfLib();
 PDFJS.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 export const useCertificate = () => {
+    // Funkcja generująca i pobierająca PDF na mobile i desktop
+    const downloadPdf = async (name: string) => {
+      const mockUser = {
+        firstName: name.split(' ')[0] || 'Jan',
+        lastName: name.split(' ').slice(1).join(' ') || 'Kowalski',
+        hierarchicalId: 'SP-WAW-2024/PREVIEW'
+      };
+      await pdfService.generateCertificate(mockUser, '12.10.2023');
+    };
   const [certTemplate, setCertTemplate] = useState<{ name: string, base64: string } | null>(null);
   const [certLayout, setCertLayout] = useState<CertificateLayout>(storage.getCertLayout());
   const [isProcessingPdf, setIsProcessingPdf] = useState(false);
@@ -91,13 +101,40 @@ export const useCertificate = () => {
       setCertTemplate(null);
   };
 
+
+  // Mobile preview: show PNG instead of PDF
   const previewPdf = async (name: string) => {
     const mockUser = {
-        firstName: name.split(' ')[0] || 'Jan',
-        lastName: name.split(' ').slice(1).join(' ') || 'Kowalski',
-        hierarchicalId: 'SP-WAW-2024/PREVIEW'
+      firstName: name.split(' ')[0] || 'Jan',
+      lastName: name.split(' ').slice(1).join(' ') || 'Kowalski',
+      hierarchicalId: 'SP-WAW-2024/PREVIEW'
     };
-    await pdfService.previewCertificate(mockUser, '12.10.2023');
+    // Mobile detection
+    const isMobile = typeof window !== 'undefined' && /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isMobile) {
+      // Generate PNG preview and show in modal
+      const template = pdfService.createTemplate(mockUser, '12.10.2023');
+      const canvas = await html2canvas(template, { scale: 2, useCORS: true, logging: false, allowTaint: true });
+      const imgData = canvas.toDataURL('image/png');
+      document.body.removeChild(template);
+      // Show modal with image
+      const modal = document.createElement('div');
+      modal.style.position = 'fixed';
+      modal.style.top = '0';
+      modal.style.left = '0';
+      modal.style.width = '100vw';
+      modal.style.height = '100vh';
+      modal.style.background = 'rgba(0,0,0,0.8)';
+      modal.style.zIndex = '9999';
+      modal.style.display = 'flex';
+      modal.style.alignItems = 'center';
+      modal.style.justifyContent = 'center';
+      modal.innerHTML = `<img src="${imgData}" style="max-width:90vw; max-height:90vh; border-radius:12px; box-shadow:0 8px 32px #0006;" alt="Podgląd certyfikatu" /><button style="position:absolute;top:20px;right:20px;font-size:2rem;background:#C5A059;color:#fff;border:none;border-radius:50%;width:48px;height:48px;cursor:pointer;">&times;</button>`;
+      modal.querySelector('button')!.onclick = () => document.body.removeChild(modal);
+      document.body.appendChild(modal);
+    } else {
+      await pdfService.previewCertificate(mockUser, '12.10.2023');
+    }
   };
 
   return {
@@ -111,6 +148,7 @@ export const useCertificate = () => {
     handleCertUpload,
     loadDefaultTemplate,
     removeTemplate,
-    previewPdf
+    previewPdf,
+    downloadPdf
   };
 };
